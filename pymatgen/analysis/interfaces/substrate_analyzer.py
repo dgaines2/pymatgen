@@ -22,8 +22,8 @@ from pymatgen.core.surface import (
 class SubstrateMatch(ZSLMatch):
     """
     A substrate match building on the Zur and McGill algorithm. This match class includes the miller
-    planes of the film and substrate the full strain tensor, the Von Mises strain, the ground state
-    energy if provided, and the elastic energy
+    planes of the film and substrate, the full strain tensor, the Von Mises strain, the ground state
+    energy (if provided), and the elastic energy
     """
 
     film_miller: tuple[int, int, int]
@@ -90,15 +90,16 @@ class SubstrateAnalyzer(ZSLGenerator):
     """
     This class applies a set of search criteria to identify suitable
     substrates for film growth. It first uses a topoplogical search by Zur
-    and McGill to identify matching super-lattices on various faces of the
+    and McGill to identify matching superlattices on various faces of the
     two materials. Additional criteria can then be used to identify the most
     suitable substrate. Currently, the only additional criteria is the
-    elastic strain energy of the super-lattices
+    elastic strain energy of the superlattices
     """
 
     def __init__(self, film_max_miller=1, substrate_max_miller=1, **kwargs):
         """
         Initializes the substrate analyzer
+
         Args:
             zslgen(ZSLGenerator): Defaults to a ZSLGenerator with standard
                 tolerances, but can be fed one with custom tolerances
@@ -150,7 +151,7 @@ class SubstrateAnalyzer(ZSLGenerator):
         """
         Finds all topological matches for the substrate and calculates elastic
         strain energy and total energy for the film if elasticity tensor and
-        ground state energy are provided:
+        ground state energy are provided
 
         Args:
             film(Structure): conventional standard structure for the film

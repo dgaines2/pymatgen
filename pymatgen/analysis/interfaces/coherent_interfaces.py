@@ -22,7 +22,7 @@ from pymatgen.core.surface import SlabGenerator
 class CoherentInterfaceBuilder:
     """
     This class constructs the coherent interfaces between two crystalline slabs
-    Coherency is defined by matching lattices not sub-planes.
+    Coherency is defined by matching lattices, not sub-planes.
     """
 
     def __init__(
@@ -248,14 +248,14 @@ class CoherentInterfaceBuilder:
 
 def get_rot_3d_for_2d(film_matrix, sub_matrix) -> np.ndarray:
     """
-    Finds a trasnformation matrix that will rotate and strain the film to the subtrate while preserving the c-axis
+    Finds a transformation matrix that will rotate and strain the film to the subtrate while preserving the c-axis
     """
     film_matrix = np.array(film_matrix)
     film_matrix = film_matrix.tolist()[:2]
     film_matrix.append(np.cross(film_matrix[0], film_matrix[1]))
 
-    # Generate 3D lattice vectors for substrate super lattice
-    # Out of plane substrate super lattice has to be same length as
+    # Generate 3D lattice vectors for substrate superlattice
+    # Out of plane substrate superlattice has to be same length as
     # Film out of plane vector to ensure no extra deformation in that
     # direction
     sub_matrix = np.array(sub_matrix)

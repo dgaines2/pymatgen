@@ -18,7 +18,7 @@ from monty.json import MSONable
 @dataclass
 class ZSLMatch(MSONable):
     """
-    A match from the Zur and McGill Algorithm. The super_lattice vectors are listed
+    A match from the Zur and McGill Algorithm. The superlattice vectors are listed
     as _sl_vectors. These are reduced according to the algorithm in the paper which
     effectively a rotation in 3D space. Use the match_transformation property to get
     the appropriate transformation matrix
@@ -33,18 +33,18 @@ class ZSLMatch(MSONable):
 
     @property
     def match_area(self):
-        """The area of the match between the substrate and film super lattice vectors"""
+        """The area of the match between the substrate and film superlattice vectors"""
         return vec_area(*self.film_sl_vectors)
 
     @property
     def match_transformation(self):
-        """The transformation matrix to convert the film super lattice vectors to the substrate"""
-        # Generate 3D lattice vectors for film super lattice
+        """The transformation matrix to convert the film superlattice vectors to the substrate"""
+        # Generate 3D lattice vectors for film superlattice
         film_matrix = list(self.film_sl_vectors)
         film_matrix.append(np.cross(film_matrix[0], film_matrix[1]))
 
-        # Generate 3D lattice vectors for substrate super lattice
-        # Out of plane substrate super lattice has to be same length as
+        # Generate 3D lattice vectors for substrate superlattice
+        # Out of plane substrate superlattice has to be same length as
         # Film out of plane vector to ensure no extra deformation in that
         # direction
         substrate_matrix = list(self.substrate_sl_vectors)
@@ -59,19 +59,19 @@ class ZSLMatch(MSONable):
 
 class ZSLGenerator(MSONable):
     """
-    This class generate matching interface super lattices based on the methodology
+    This class generate matching interface superlattices based on the methodology
     of lattice vector matching for heterostructural interfaces proposed by
     Zur and McGill:
     Journal of Applied Physics 55 (1984), 378 ; doi: 10.1063/1.333084
-    The process of generating all possible matching super lattices is:
+    The process of generating all possible matching superlattices is:
     1.) Reduce the surface lattice vectors and calculate area for the surfaces
-    2.) Generate all super lattice transformations within a maximum allowed area
-        limit that give nearly equal area super-lattices for the two
+    2.) Generate all superlattice transformations within a maximum allowed area
+        limit that give nearly equal area superlattices for the two
         surfaces - generate_sl_transformation_sets
     3.) For each superlattice set:
-        1.) Reduce super lattice vectors
-        2.) Check length and angle between film and substrate super lattice
-            vectors to determine if the super lattices are the nearly same
+        1.) Reduce superlattice vectors
+        2.) Check length and angle between film and substrate superlattice
+            vectors to determine if the superlattices are the nearly same
             and therefore coincident - get_equiv_transformations
     """
 
@@ -84,16 +84,19 @@ class ZSLGenerator(MSONable):
         bidirectional=False,
     ):
         """
-        Initialize a Zur Super Lattice Generator for a specific film and
+        Initialize a Zur Superlattice Generator for a specific film and
             substrate
+
         Args:
             max_area_ratio_tol(float): Max tolerance on ratio of
-                super-lattices to consider equal
-            max_area(float): max super lattice area to generate in search
-            max_length_tol: maximum length tolerance in checking if two
+                superlattices to consider equal
+            max_area(float): max superlattice area to generate in search
+            max_length_tol(float): maximum length tolerance in checking if two
                 vectors are of nearly the same length
-            max_angle_tol: maximum angle tolerance in checking of two sets
+            max_angle_tol(float): maximum angle tolerance in checking of two sets
                 of vectors have nearly the same angle between them
+            bidirectional(bool): if True, use a bidirectional constraint when 
+                checking if two sets of vectors are the same
         """
         self.max_area_ratio_tol = max_area_ratio_tol
         self.max_area = max_area
@@ -105,6 +108,7 @@ class ZSLGenerator(MSONable):
         """
         Determine if two sets of vectors are the same within length and angle
         tolerances
+
         Args:
             vec_set1(array[array]): an array of two vectors
             vec_set2(array[array]): second array of two vectors
@@ -118,6 +122,7 @@ class ZSLGenerator(MSONable):
         """
         Determine if two sets of vectors are the same within length and angle
         tolerances
+
         Args:
             vec_set1(array[array]): an array of two vectors
             vec_set2(array[array]): second array of two vectors
@@ -140,17 +145,18 @@ class ZSLGenerator(MSONable):
         """
         Generates transformation sets for film/substrate pair given the
         area of the unit cell area for the film and substrate. The
-        transformation sets map the film and substrate unit cells to super
-        lattices with a maximum area
+        transformation sets map the film and substrate unit cells to 
+        superlattices with a maximum area
+
         Args:
             film_area(int): the unit cell area for the film
             substrate_area(int): the unit cell area for the substrate
         Returns:
             transformation_sets: a set of transformation_sets defined as:
                 1.) the transformation matrices for the film to create a
-                super lattice of area i*film area
+                superlattice of area i*film area
                 2.) the transformation matrices for the substrate to create
-                a super lattice of area j*film area
+                a superlattice of area j*film area
         """
 
         transformation_indices = [
@@ -174,18 +180,18 @@ class ZSLGenerator(MSONable):
     def get_equiv_transformations(self, transformation_sets, film_vectors, substrate_vectors):
         """
         Applies the transformation_sets to the film and substrate vectors
-        to generate super-lattices and checks if they matches.
+        to generate superlattices and checks if they match.
         Returns all matching vectors sets.
+
         Args:
             transformation_sets(array): an array of transformation sets:
                 each transformation set is an array with the (i,j)
                 indicating the area multiples of the film and substrate it
-                corresponds to, an array with all possible transformations
+                corresponds to. Contains an array with all possible transformations
                 for the film area multiple i and another array for the
-                substrate area multiple j.
-            film_vectors(array): film vectors to generate super lattices
-            substrate_vectors(array): substrate vectors to generate super
-                lattices
+                substrate area multiple j
+            film_vectors(array): film vectors to generate superlattices
+            substrate_vectors(array): substrate vectors to generate superlattices
         """
 
         for (film_transformations, substrate_transformations) in transformation_sets:
@@ -194,7 +200,7 @@ class ZSLGenerator(MSONable):
 
             substrates = [reduce_vectors(*np.dot(s, substrate_vectors)) for s in substrate_transformations]
 
-            # Check if equivalent super lattices
+            # Check if equivalent superlattices
             for (f_trans, s_trans), (f, s) in zip(
                 product(film_transformations, substrate_transformations),
                 product(films, substrates),
@@ -204,18 +210,18 @@ class ZSLGenerator(MSONable):
 
     def __call__(self, film_vectors, substrate_vectors, lowest=False) -> Iterator[ZSLMatch]:
         """
-        Runs the ZSL algorithm to generate all possible matching
+        Runs the ZSL algorithm to generate all possible matching superlattices
         :return:
         """
 
         film_area = vec_area(*film_vectors)
         substrate_area = vec_area(*substrate_vectors)
 
-        # Generate all super lattice combinations for a given set of miller
+        # Generate all superlattice combinations for a given set of miller
         # indices
         transformation_sets = self.generate_sl_transformation_sets(film_area, substrate_area)
 
-        # Check each super-lattice pair to see if they match
+        # Check each superlattice pair to see if they match
         for match in self.get_equiv_transformations(transformation_sets, film_vectors, substrate_vectors):
             # Yield the match area, the miller indices,
             yield ZSLMatch(
@@ -234,20 +240,20 @@ class ZSLGenerator(MSONable):
 
 def gen_sl_transform_matricies(area_multiple):
     """
-    Generates the transformation matricies that convert a set of 2D
-    vectors into a super lattice of integer area multiple as proven
+    Generates the transformation matrices that convert a set of 2D
+    vectors into a superlattice of integer area multiple as proven
     in Cassels:
 
     Cassels, John William Scott. An introduction to the geometry of
     numbers. Springer Science & Business Media, 2012.
 
     Args:
-        area_multiple(int): integer multiple of unit cell area for super
-        lattice area
+        area_multiple(int): integer multiple of unit cell area for 
+            superlattice area
 
     Returns:
         matrix_list: transformation matricies to convert unit vectors to
-        super lattice vectors
+            superlattice vectors
     """
     return [
         np.array(((i, j), (0, area_multiple / i)))
