@@ -423,10 +423,22 @@ class SpacegroupAnalyzer:
             # rhombohedral
             lengths = conv.lattice.lengths
             if abs(lengths[0] - lengths[2]) < 0.0001:
-                transf = np.eye
+                transf = np.eye(3)
             else:
-                transf = np.array([[-1, 1, 1], [2, 1, 1], [-1, -2, 1]], dtype=np.float_) / 3
-
+                # transf = np.array([[-1, 1, 1], [2, 1, 1], [-1, -2, 1]], dtype=np.float_) / 3
+                """
+                change transf to match sglib and have positive determinant of prim matrix
+                - Unfortunately, pymatgen does some further processing of the primitive
+                    cell for rhombohedrals that isn't nice to represent with a single
+                    rotation matrix
+                - note that pymatgen and phonopy have different row/column conventions
+                    pymatgen assumes transf @ lattice_matrix where lattice_matrix are
+                      row vectors
+                    phonopy assumes lattice_matrix @ transf where lattice matrix are column vectors
+                - in pymatgen format, phonopy transf looks like
+                    ph_transf = [[2, 1, 1], [-1, 1, 1], [-1, -2, 1]] / 3
+                """
+                transf = np.array([[2, 1, 1], [-1, 1, 1], [-1, -2, 1]], dtype=np.float_) / 3
         elif "I" in self.get_space_group_symbol():
             transf = np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]], dtype=np.float_) / 2
         elif "F" in self.get_space_group_symbol():
@@ -488,34 +500,37 @@ class SpacegroupAnalyzer:
             if not any(map(new_s.is_periodic_image, new_sites)):
                 new_sites.append(new_s)
 
-        if lattice == "rhombohedral":
-            prim = Structure.from_sites(new_sites)
-            lengths = prim.lattice.lengths
-            angles = prim.lattice.angles
-            a = lengths[0]
-            alpha = math.pi * angles[0] / 180
-            new_matrix = [
-                [a * cos(alpha / 2), -a * sin(alpha / 2), 0],
-                [a * cos(alpha / 2), a * sin(alpha / 2), 0],
-                [
-                    a * cos(alpha) / cos(alpha / 2),
-                    0,
-                    a * math.sqrt(1 - (cos(alpha) ** 2 / (cos(alpha / 2) ** 2))),
-                ],
-            ]
-            new_sites = []
-            latt = Lattice(new_matrix)
-            for s in prim:
-                new_s = PeriodicSite(
-                    s.specie,
-                    s.frac_coords,
-                    latt,
-                    to_unit_cell=True,
-                    properties=s.properties,
-                )
-                if not any(map(new_s.is_periodic_image, new_sites)):
-                    new_sites.append(new_s)
-            return Structure.from_sites(new_sites)
+        # if lattice == "rhombohedral":
+        #     prim = Structure.from_sites(new_sites)
+        #     lengths = prim.lattice.lengths
+        #     angles = prim.lattice.angles
+        #     a = lengths[0]
+        #     alpha = math.pi * angles[0] / 180
+        #     print(prim, lengths, angles, a, alpha)
+        #     # new_matrix = [
+        #     #     [a * cos(alpha / 2), -a * sin(alpha / 2), 0],
+        #     #     [a * cos(alpha / 2), a * sin(alpha / 2), 0],
+        #     #     [
+        #     #         a * cos(alpha) / cos(alpha / 2),
+        #     #         0,
+        #     #         a * math.sqrt(1 - (cos(alpha) ** 2 / (cos(alpha / 2) ** 2))),
+        #     #     ],
+        #     # ]
+        #     # print(new_matrix)
+        #     # new_sites = []
+        #     # latt = Lattice(new_matrix)
+        #     latt = prim.lattice
+        #     for s in prim:
+        #         new_s = PeriodicSite(
+        #             s.specie,
+        #             s.frac_coords,
+        #             latt,
+        #             to_unit_cell=True,
+        #             properties=s.properties,
+        #         )
+        #         if not any(map(new_s.is_periodic_image, new_sites)):
+        #             new_sites.append(new_s)
+        #     return Structure.from_sites(new_sites)
 
         return Structure.from_sites(new_sites)
 
