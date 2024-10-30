@@ -505,7 +505,20 @@ class SpacegroupAnalyzer:
             lengths = conv.lattice.lengths
             if abs(lengths[0] - lengths[2]) < 1e-4:
                 return np.eye
-            return np.array([[-1, 1, 1], [2, 1, 1], [-1, -2, 1]], dtype=np.float64) / 3
+            # return np.array([[-1, 1, 1], [2, 1, 1], [-1, -2, 1]], dtype=np.float64) / 3
+            """
+            change transf to match sglib and have positive determinant of prim matrix
+            - Unfortunately, pymatgen does some further processing of the primitive
+                cell for rhombohedrals that isn't nice to represent with a single
+                rotation matrix
+            - note that pymatgen and phonopy have different row/column conventions
+                pymatgen assumes transf @ lattice_matrix where lattice_matrix are
+                    row vectors
+                phonopy assumes lattice_matrix @ transf where lattice matrix are column vectors
+            - in pymatgen format, phonopy transf looks like
+                ph_transf = [[2, 1, 1], [-1, 1, 1], [-1, -2, 1]] / 3
+            """
+            return np.array([[2, 1, 1], [-1, 1, 1], [-1, -2, 1]], dtype=np.float64) / 3
 
         if "I" in self.get_space_group_symbol():
             return np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]], dtype=np.float64) / 2
@@ -573,34 +586,34 @@ class SpacegroupAnalyzer:
             if not any(map(new_s.is_periodic_image, new_sites)):
                 new_sites.append(new_s)
 
-        if lattice == "rhombohedral":
-            prim = Structure.from_sites(new_sites)
-            lengths = prim.lattice.lengths
-            angles = prim.lattice.angles
-            a = lengths[0]
-            alpha = math.pi * angles[0] / 180
-            new_matrix = [
-                [a * cos(alpha / 2), -a * sin(alpha / 2), 0],
-                [a * cos(alpha / 2), a * sin(alpha / 2), 0],
-                [
-                    a * cos(alpha) / cos(alpha / 2),
-                    0,
-                    a * math.sqrt(1 - (cos(alpha) ** 2 / (cos(alpha / 2) ** 2))),
-                ],
-            ]
-            new_sites = []
-            lattice = Lattice(new_matrix)
-            for site in prim:
-                new_s = PeriodicSite(
-                    site.specie,
-                    site.frac_coords,
-                    lattice,
-                    to_unit_cell=True,
-                    properties=site.properties,
-                )
-                if not any(map(new_s.is_periodic_image, new_sites)):
-                    new_sites.append(new_s)
-            return Structure.from_sites(new_sites)
+        # if lattice == "rhombohedral":
+        #     prim = Structure.from_sites(new_sites)
+        #     lengths = prim.lattice.lengths
+        #     angles = prim.lattice.angles
+        #     a = lengths[0]
+        #     alpha = math.pi * angles[0] / 180
+        #     new_matrix = [
+        #         [a * cos(alpha / 2), -a * sin(alpha / 2), 0],
+        #         [a * cos(alpha / 2), a * sin(alpha / 2), 0],
+        #         [
+        #             a * cos(alpha) / cos(alpha / 2),
+        #             0,
+        #             a * math.sqrt(1 - (cos(alpha) ** 2 / (cos(alpha / 2) ** 2))),
+        #         ],
+        #     ]
+        #     new_sites = []
+        #     lattice = Lattice(new_matrix)
+        #     for site in prim:
+        #         new_s = PeriodicSite(
+        #             site.specie,
+        #             site.frac_coords,
+        #             lattice,
+        #             to_unit_cell=True,
+        #             properties=site.properties,
+        #         )
+        #         if not any(map(new_s.is_periodic_image, new_sites)):
+        #             new_sites.append(new_s)
+        #     return Structure.from_sites(new_sites)
 
         return Structure.from_sites(new_sites)
 
